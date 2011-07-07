@@ -42,7 +42,7 @@ if(isset($groups[$_GET['g']]))
 }
 
 //Add this page too
-$modified[] = filemtime($base_path."js.tsp");
+$modified[] = filemtime($base_path."js.php");
 
 //Get the latest modified date
 rsort($modified);
@@ -71,4 +71,4 @@ header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($base_path.'js.tsp') + 69
 echo $js;
 
 ob_end_flush();
-?>
+//end of js.php

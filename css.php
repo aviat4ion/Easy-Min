@@ -50,7 +50,7 @@ if(isset($groups[$_GET['g']]))
 }
 
 //Add this page too
-$modified[] = filemtime($base_path."css.tsp");
+$modified[] = filemtime($base_path."css.php");
 
 //Get the latest modified date
 rsort($modified);
@@ -79,4 +79,4 @@ header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($base_path.'css.tsp') + 6
 echo $css;
 
 ob_end_flush();
-?>
+//End of css.php
