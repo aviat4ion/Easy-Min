@@ -74,7 +74,7 @@ if($last_modified === $requested_time)
 header("Content-Type: text/css; charset=utf8");
 header("Cache-control: public, max-age=691200, must-revalidate");
 header("Last-Modified: ".gmdate('D, d M Y H:i:s', $last_modified)." GMT");
-header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($base_path.'css.tsp') + 691200))." GMT");
+header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($base_path.'css.php') + 691200))." GMT");
 
 echo $css;
 
