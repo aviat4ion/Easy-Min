@@ -1,6 +1,7 @@
 <?php
 //Change as needed
 $base_path = $_SERVER['DOCUMENT_ROOT'];
+$cache_file = $base_path.'/cache/cache.js';
 
 require('./config/jshrink.php');
 
@@ -44,14 +45,17 @@ if(isset($groups[$_GET['g']]))
 //Add this page too
 $modified[] = filemtime($base_path."js.php");
 
+$cache_modified = 0;
+
+//Add the cache file
+if(is_file($cache_file))
+{
+	$cache_modified = filemtime($cache_file);
+}
+
 //Get the latest modified date
 rsort($modified);
 $last_modified = $modified[0];
-
-if(!isset($_GET['debug']))
-{
-	$js = JShrink::minify($js, array('flaggedComments' => false));
-}
 
 $requested_time=(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) 
 	? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) 
@@ -61,6 +65,16 @@ if($last_modified === $requested_time)
 {
 	header("HTTP/1.1 304 Not Modified");
 	exit();
+}
+
+if(!isset($_GET['debug']) && ($cache_modified < $last_modified))
+{
+	$js = trim(JShrink::minify($js, array('flaggedComments' => false)));
+	file_put_contents($cache_file, $js);
+}
+else
+{
+	$js = file_get_contents($cache_file);
 }
 
 header("Content-Type: application/x-javascript; charset=utf8");
