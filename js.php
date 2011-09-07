@@ -1,7 +1,6 @@
 <?php
 //Change as needed
 $base_path = $_SERVER['DOCUMENT_ROOT'];
-$cache_file = $base_path.'/cache/cache.js';
 
 require('./config/jshrink.php');
 
@@ -34,12 +33,18 @@ $modified = array();
 
 if(isset($groups[$_GET['g']]))
 {
+	$cache_file = $base_path.'/cache/'.$_GET['g'];
+	
 	foreach($groups[$_GET['g']] as $file)
 	{
 		$new_file = realpath($base_path.$file);
 		$js .= file_get_contents($new_file);
 		$modified[] = filemtime($new_file);
 	}
+}
+else //Nothing to display? Just exit
+{
+	die("You must specify a group that exists");
 }
 
 //Add this page too
