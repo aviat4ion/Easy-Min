@@ -1,10 +1,13 @@
 <?php
+//Get config files
+require('./config/config.php');
 
-//Change as needed
-$base_path = $_SERVER['DOCUMENT_ROOT'];
-//This GZIPs the CSS for transmission to the user
-//making file size smaller and transfer rate quicker
-ob_start("ob_gzhandler");
+//Include the css groups
+$groups = require("./config/css_groups.php");
+
+//The name of this file
+$this_file = $css_root.'css.php';
+
 
 //Function for compressing the CSS as tightly as possible
 function compress($buffer) {
@@ -33,9 +36,6 @@ while($i < $pia_len)
 	$i = $j + 1;
 };
 
-//Include the css groups
-$groups = require("./config/css_groups.php");
-
 $css = '';
 $modified = array();
 
@@ -43,14 +43,14 @@ if(isset($groups[$_GET['g']]))
 {
 	foreach($groups[$_GET['g']] as $file)
 	{
-		$new_file = realpath($base_path.$file);
+		$new_file = realpath($css_root.$file);
 		$css .= file_get_contents($new_file);
 		$modified[] = filemtime($new_file);
 	}
 }
 
 //Add this page too
-$modified[] = filemtime($base_path."css.php");
+$modified[] = filemtime($this_file);
 
 //Get the latest modified date
 rsort($modified);
@@ -71,10 +71,14 @@ if($last_modified === $requested_time)
 	exit();
 }
 
+//This GZIPs the CSS for transmission to the user
+//making file size smaller and transfer rate quicker
+ob_start("ob_gzhandler");
+
 header("Content-Type: text/css; charset=utf8");
 header("Cache-control: public, max-age=691200, must-revalidate");
 header("Last-Modified: ".gmdate('D, d M Y H:i:s', $last_modified)." GMT");
-header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($base_path.'css.php') + 691200))." GMT");
+header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($this_file) + 691200))." GMT");
 
 echo $css;
 
