@@ -1,7 +1,7 @@
 <?php
 //Get config files
 require('./config/config.php');
-require('./config/jshrink.php');
+require('./config/JSMinPlus.php');
 
 //Include the js groups
 $groups = require("./config/js_groups.php");
@@ -107,7 +107,7 @@ if($last_modified === $requested_time)
 //Determine what to do: rebuild cache, send files as is, or send cache.
 if($cache_modified < $last_modified)
 {
-	$js = trim(JShrink::minify(get_files(), array('flaggedComments' => false)));
+	$js = JSMinPlus::minify(get_files());
 	$cs = file_put_contents($cache_file, $js);
 	
 	//Make sure cache file gets created/updated
