@@ -4,7 +4,8 @@ require('./config/config.php');
 require('./config/JSMinPlus.php');
 
 //Include the js groups
-$groups = require("./config/js_groups.php");
+$groups_file = "./config/js_groups.php";
+$groups = require($groups_file);
 
 //The name of this file
 $this_file = 'js.php';
@@ -68,8 +69,9 @@ if(isset($groups[$_GET['g']]))
 		$modified[] = filemtime($new_file);
 	}
 	
-	//Add this page too
+	//Add this page too, as well as the groups file
 	$modified[] = filemtime($this_file);
+	$modified[] = filemtime($groups_file);
 	
 	$cache_modified = 0;
 	
