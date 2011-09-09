@@ -7,7 +7,7 @@ require('./config/JSMinPlus.php');
 $groups = require("./config/js_groups.php");
 
 //The name of this file
-$this_file = $js_root.'js.php';
+$this_file = 'js.php';
 
 // --------------------------------------------------------------------------
 

@@ -6,7 +6,7 @@ require('./config/config.php');
 $groups = require("./config/css_groups.php");
 
 //The name of this file
-$this_file = $css_root.'css.php';
+$this_file = 'css.php';
 
 
 //Function for compressing the CSS as tightly as possible
@@ -60,6 +60,8 @@ if(!isset($_GET['debug']))
 {
 	$css = compress($css);
 }
+
+$css = strtr($css, $path_from, $path_to);
 
 $requested_time=(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) 
 	? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) 
