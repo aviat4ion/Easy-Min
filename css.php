@@ -11,11 +11,29 @@ $this_file = 'css.php';
 
 //Function for compressing the CSS as tightly as possible
 function compress($buffer) {
+    
     //Remove CSS comments
     $buffer = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $buffer);
+    
     //Remove tabs, spaces, newlines, etc.
-    $buffer = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $buffer);
     $buffer = preg_replace('`\s+`', ' ', $buffer);
+    $replace = array(
+    	' )' => ')',
+    	') ' => ')',
+    	' }' => '}',
+    	'} ' => '}',
+    	' {' => '{',
+    	'{ ' => '{',
+    	', ' => ',',
+    	': ' => ':',
+    	'; ' => ';',
+    );
+    
+    //Eradicate every last space!
+    $buffer = trim(strtr($buffer, $replace));
+    $buffer = str_replace('{ ', '{', $buffer);
+    $buffer = str_replace('} ', '}', $buffer);
+    
     return $buffer;
 }
 

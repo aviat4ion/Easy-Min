@@ -15,7 +15,7 @@ $this_file = 'js.php';
 /**
  * Get Files
  * 
- * Concatonates the javascript files for the current
+ * Concatenates the javascript files for the current
  * group as a string
  * @return string
  */
@@ -133,7 +133,7 @@ else
 //making file size smaller and transfer rate quicker
 ob_start("ob_gzhandler");
 
-header("Content-Type: application/x-javascript; charset=utf8");
+header("Content-Type: application/javascript; charset=utf8");
 header("Cache-control: public, max-age=691200, must-revalidate");
 header("Last-Modified: ".gmdate('D, d M Y H:i:s', $last_modified)." GMT");
 header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($this_file) + 691200))." GMT");
