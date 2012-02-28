@@ -1,7 +1,6 @@
 <?php
 //Get config files
 require('./config/config.php');
-require('./config/JSMinPlus.php');
 
 //Include the js groups
 $groups_file = "./config/js_groups.php";
@@ -36,6 +35,29 @@ function get_files()
 
 // --------------------------------------------------------------------------
 
+/**
+ * Google Min
+ *
+ * Minifies javascript using google's closure compiler
+ * @param string $new_file
+ * @return string
+ */
+function google_min($new_file)
+{
+	//Get a much-minified version from Google's closure compiler
+	$ch = curl_init('http://closure-compiler.appspot.com/compile');
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($new_file));
+	$output = curl_exec($ch);
+	curl_close($ch);
+	echo 'Minified code created<hr />';
+	
+	return $output;
+}
+
+// --------------------------------------------------------------------------
+
 //Creative rewriting of /g/groupname to ?g=groupname
 $pi = $_SERVER['PATH_INFO'];
 $pia = explode('/', $pi);
@@ -61,7 +83,7 @@ $modified = array();
 //Aggregate the last modified times of the files
 if(isset($groups[$_GET['g']]))
 {
-	$cache_file = $js_root.'/cache/'.$_GET['g'];
+	$cache_file = $js_root.'cache/'.$_GET['g'];
 	
 	foreach($groups[$_GET['g']] as $file)
 	{
@@ -109,7 +131,7 @@ if($last_modified === $requested_time)
 //Determine what to do: rebuild cache, send files as is, or send cache.
 if($cache_modified < $last_modified)
 {
-	$js = JSMinPlus::minify(get_files());
+	$js = google_min(get_files());
 	$cs = file_put_contents($cache_file, $js);
 	
 	//Make sure cache file gets created/updated
