@@ -51,8 +51,6 @@ function google_min($new_file)
 	curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($new_file));
 	$output = curl_exec($ch);
 	curl_close($ch);
-	echo 'Minified code created<hr />';
-	
 	return $output;
 }
 
