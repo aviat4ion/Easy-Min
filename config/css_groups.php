@@ -1,4 +1,20 @@
 <?php
+/**
+ * Easy Min
+ *
+ * Simple minification for better website performance
+ *
+ * @author		Timothy J. Warren
+ * @copyright	Copyright (c) 2012
+ * @link 		https://github.com/aviat4ion/Easy-Min
+ * @license		http://philsturgeon.co.uk/code/dbad-license
+ */
+
+// --------------------------------------------------------------------------
+
+/**
+ * This is the config array for css files to concatenate and minify
+ */
 return array(
 	/*-----
 			Css				
@@ -13,3 +29,4 @@ return array(
 		),
 	*/
 );
+// End of css_groups.php

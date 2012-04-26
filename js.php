@@ -1,4 +1,17 @@
 <?php
+/**
+ * Easy Min
+ *
+ * Simple minification for better website performance
+ *
+ * @author		Timothy J. Warren
+ * @copyright	Copyright (c) 2012
+ * @link 		https://github.com/aviat4ion/Easy-Min
+ * @license		http://philsturgeon.co.uk/code/dbad-license
+ */
+
+// --------------------------------------------------------------------------
+
 //Get config files
 require('./config/config.php');
 
@@ -73,6 +86,8 @@ while($i < $pia_len)
 	$i = $j + 1;
 };
 
+// --------------------------------------------------------------------------
+
 $js = '';
 $modified = array();
 
@@ -138,10 +153,12 @@ if($cache_modified < $last_modified)
 		die("Cache file was not created. Make sure you have the correct folder permissions.");
 	}
 }
+// If debug is set, just concatenate
 else if(isset($_GET['debug']))
 {
 	$js = get_files();
 }
+// Otherwise, send the cached file
 else
 {
 	$js = file_get_contents($cache_file);
@@ -153,6 +170,7 @@ else
 //making file size smaller and transfer rate quicker
 ob_start("ob_gzhandler");
 
+// Set important caching headers
 header("Content-Type: application/javascript; charset=utf8");
 header("Cache-control: public, max-age=691200, must-revalidate");
 header("Last-Modified: ".gmdate('D, d M Y H:i:s', $last_modified)." GMT");

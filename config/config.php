@@ -1,4 +1,16 @@
 <?php
+/**
+ * Easy Min
+ *
+ * Simple minification for better website performance
+ *
+ * @author		Timothy J. Warren
+ * @copyright	Copyright (c) 2012
+ * @link 		https://github.com/aviat4ion/Easy-Min
+ * @license		http://philsturgeon.co.uk/code/dbad-license
+ */
+
+// --------------------------------------------------------------------------
 
 /*
 |--------------------------------------------------------------------------

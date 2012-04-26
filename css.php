@@ -1,4 +1,17 @@
 <?php
+/**
+ * Easy Min
+ *
+ * Simple minification for better website performance
+ *
+ * @author		Timothy J. Warren
+ * @copyright	Copyright (c) 2012
+ * @link 		https://github.com/aviat4ion/Easy-Min
+ * @license		http://philsturgeon.co.uk/code/dbad-license
+ */
+
+// --------------------------------------------------------------------------
+
 //Get config files
 require('./config/config.php');
 
@@ -37,6 +50,8 @@ function compress($buffer) {
     return $buffer;
 }
 
+// --------------------------------------------------------------------------
+
 //Creative rewriting
 $pi = $_SERVER['PATH_INFO'];
 $pia = explode('/', $pi);
@@ -54,9 +69,12 @@ while($i < $pia_len)
 	$i = $j + 1;
 };
 
+// --------------------------------------------------------------------------
+
 $css = '';
 $modified = array();
 
+// Get all the css files, and concatenate them together
 if(isset($groups[$_GET['g']]))
 {
 	foreach($groups[$_GET['g']] as $file)
@@ -67,24 +85,28 @@ if(isset($groups[$_GET['g']]))
 	}
 }
 
-//Add this page too
+//Add this page for last modified check
 $modified[] = filemtime($this_file);
 
 //Get the latest modified date
 rsort($modified);
 $last_modified = $modified[0];
 
-if(!isset($_GET['debug']))
+// If not in debug mode, minify the css
+if( ! isset($_GET['debug']))
 {
 	$css = compress($css);
 }
 
+// Correct paths that have changed due to concatenation
+// based on rules in the config file
 $css = strtr($css, $path_from, $path_to);
 
 $requested_time=(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) 
 	? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) 
 	: time();
 
+// Send 304 when not modified for faster response
 if($last_modified === $requested_time)
 {
 	header("HTTP/1.1 304 Not Modified");
