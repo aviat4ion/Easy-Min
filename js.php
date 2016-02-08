@@ -5,178 +5,243 @@
  * Simple minification for better website performance
  *
  * @author		Timothy J. Warren
- * @copyright	Copyright (c) 2012
- * @link 		https://github.com/aviat4ion/Easy-Min
+ * @copyright	Copyright (c) 2012-2016
+ * @link 		https://git.timshomepage.net/aviat4ion/Easy-Min
  * @license		http://philsturgeon.co.uk/code/dbad-license
  */
 
 // --------------------------------------------------------------------------
 
-//Get config files
-require('./config/config.php');
+ namespace Aviat\EasyMin;
 
-//Include the js groups
-$groups_file = "./config/js_groups.php";
-$groups = require($groups_file);
+ use GuzzleHttp\Client;
+ use GuzzleHttp\Psr7\Request;
 
-//The name of this file
-$this_file = 'js.php';
+ // Include guzzle
+ require_once('../vendor/autoload.php');
+ require_once('./min.php');
 
-// --------------------------------------------------------------------------
+ /**
+  * Simple Javascript minfier, using google closure compiler
+  */
+ class JSMin extends BaseMin {
 
-/**
- * Get Files
- * 
- * Concatenates the javascript files for the current
- * group as a string
- * @return string
- */
-function get_files()
-{
-	global $groups, $js_root;
+ 	protected $js_root;
+ 	protected $js_group;
+ 	protected $js_groups_file;
+ 	protected $cache_file;
 
-	$js = '';
-	
-	foreach($groups[$_GET['g']] as $file)
-	{
-		$new_file = realpath($js_root.$file);
-		$js .= file_get_contents($new_file);
-	}
-	
-	return $js;
-}
+ 	protected $last_modified;
+ 	protected $requested_time;
+ 	protected $cache_modified;
 
-// --------------------------------------------------------------------------
+ 	public function __construct(array $config, array $groups)
+ 	{
+ 		$group = $_GET['g'];
 
-/**
- * Google Min
- *
- * Minifies javascript using google's closure compiler
- * @param string $new_file
- * @return string
- */
-function google_min($new_file)
-{
-	//Get a much-minified version from Google's closure compiler
-	$ch = curl_init('http://closure-compiler.appspot.com/compile');
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, 'output_info=compiled_code&output_format=text&compilation_level=SIMPLE_OPTIMIZATIONS&js_code=' . urlencode($new_file));
-	$output = curl_exec($ch);
-	curl_close($ch);
-	return $output;
-}
+ 		$this->js_root = $config['js_root'];
+ 		$this->js_group = $groups[$group];
+ 		$this->js_groups_file = $config['js_groups_file'];
+ 		$this->cache_file = "{$this->js_root}cache/{$group}";
+ 		$this->last_modified = $this->get_last_modified();
 
-// --------------------------------------------------------------------------
+ 		$this->cache_modified = (is_file($this->cache_file))
+ 			? filemtime($this->cache_file)
+ 			: 0;
 
-//Creative rewriting of /g/groupname to ?g=groupname
-$pi = $_SERVER['PATH_INFO'];
-$pia = explode('/', $pi);
+ 		// Output some JS!
+ 		$this->send();
+ 	}
 
-$pia_len = count($pia);
-$i = 1;
+ 	protected function send()
+ 	{
+ 		// Override caching if debug key is set
+ 		if($this->is_debug_call())
+ 		{
+ 			return $this->output($this->get_files());
+ 		}
 
-while($i < $pia_len)
-{
-	$j = $i+1;
-	$j = (isset($pia[$j])) ? $j : $i;
-	
-	$_GET[$pia[$i]] = $pia[$j];
-	
-	$i = $j + 1;
-};
+ 		// If the browser's cached version is up to date,
+ 		// don't resend the file
+ 		if($this->last_modified == $this->get_if_modified() && $this->is_not_debug())
+ 		{
+ 			throw new FileNotChangedException();
+ 		}
 
-// --------------------------------------------------------------------------
+ 		if($this->cache_modified < $this->last_modified)
+ 		{
+ 			$js = $this->minify($this->get_files());
 
-$js = '';
-$modified = array();
+ 			//Make sure cache file gets created/updated
+ 			if (file_put_contents($this->cache_file, $js) === FALSE)
+ 			{
+ 				echo 'Cache file was not created. Make sure you have the correct folder permissions.';
+ 				return;
+ 			}
 
-// --------------------------------------------------------------------------
+ 			return $this->output($js);
+ 		}
+ 		else
+ 		{
+ 			return $this->output(file_get_contents($this->cache_file));
+ 		}
+ 	}
 
-//Aggregate the last modified times of the files
-if(isset($groups[$_GET['g']]))
-{
-	$cache_file = $js_root.'cache/'.$_GET['g'];
-	
-	foreach($groups[$_GET['g']] as $file)
-	{
-		$new_file = realpath($js_root.$file);
-		$modified[] = filemtime($new_file);
-	}
-	
-	//Add this page too, as well as the groups file
-	$modified[] = filemtime($this_file);
-	$modified[] = filemtime($groups_file);
-	
-	$cache_modified = 0;
-	
-	//Add the cache file
-	if(is_file($cache_file))
-	{
-		$cache_modified = filemtime($cache_file);
-	}
-}
-else //Nothing to display? Just exit
-{
-	die("You must specify a group that exists");
-}
+ 	/**
+ 	 * Makes a call to google closure compiler service
+ 	 *
+ 	 * @param array $options - Form parameters
+ 	 * @return object
+ 	 */
+ 	protected function closure_call(array $options)
+ 	{
+ 		$client = new Client();
+ 		$response = $client->post('http://closure-compiler.appspot.com/compile', [
+ 			'headers' => [
+ 				'Accept-Encoding' => 'gzip',
+ 				'Content-type' => 'application/x-www-form-urlencoded'
+ 			],
+ 			'form_params' => $options
+ 		]);
 
-// --------------------------------------------------------------------------
+ 		return $response;
+ 	}
 
-//Get the latest modified date
-rsort($modified);
-$last_modified = $modified[0];
+ 	/**
+ 	 * Do a call to the closure compiler to check for compilation errors
+ 	 *
+ 	 * @param  array $options
+ 	 * @return void
+ 	 */
+ 	protected function check_minify_errors($options)
+ 	{
+ 		$error_res = $this->closure_call($options);
+ 		$error_json = $error_res->getBody();
+ 		$error_obj = json_decode($error_json) ?: (object)[];
 
-$requested_time=(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) 
-	? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) 
-	: time();
+ 		// Show error if exists
+ 		if ( ! empty($error_obj->errors) || ! empty($error_obj->serverErrors))
+ 		{
+ 			$error_json = json_encode($error_obj, JSON_PRETTY_PRINT);
+ 			header('Content-type: application/javascript');
+ 			echo "console.error(${error_json});";
+ 			die();
+ 		}
+ 	}
 
-// If the browser's cached version is up to date, 
-// don't resend the file
-if($last_modified === $requested_time)
-{
-	header("HTTP/1.1 304 Not Modified");
-	exit();
-}
+ 	/**
+ 	 * Get Files
+ 	 *
+ 	 * Concatenates the javascript files for the current
+ 	 * group as a string
+ 	 *
+ 	 * @return string
+ 	 */
+ 	protected function get_files()
+ 	{
+ 		$js = '';
 
-// --------------------------------------------------------------------------
+ 		foreach($this->js_group as $file)
+ 		{
+ 			$new_file = realpath("{$this->js_root}{$file}");
+ 			$js .= file_get_contents($new_file) . "\n\n";
+ 		}
 
-//Determine what to do: rebuild cache, send files as is, or send cache.
-if($cache_modified < $last_modified)
-{
-	$js = google_min(get_files());
-	$cs = file_put_contents($cache_file, $js);
-	
-	//Make sure cache file gets created/updated
-	if($cs === FALSE)
-	{
-		die("Cache file was not created. Make sure you have the correct folder permissions.");
-	}
-}
-// If debug is set, just concatenate
-else if(isset($_GET['debug']))
-{
-	$js = get_files();
-}
-// Otherwise, send the cached file
-else
-{
-	$js = file_get_contents($cache_file);
-}
+ 		return $js;
+ 	}
 
-// --------------------------------------------------------------------------
+ 	/**
+ 	 * Get the most recent modified date
+ 	 *
+ 	 * @return int
+ 	 */
+ 	protected function get_last_modified()
+ 	{
+ 		$modified = array();
 
-//This GZIPs the js for transmission to the user
-//making file size smaller and transfer rate quicker
-ob_start("ob_gzhandler");
+ 		foreach($this->js_group as $file)
+ 		{
+ 			$new_file = realpath("{$this->js_root}{$file}");
+ 			$modified[] = filemtime($new_file);
+ 		}
 
-// Set important caching headers
-header("Content-Type: application/javascript; charset=utf8");
-header("Cache-control: public, max-age=691200, must-revalidate");
-header("Last-Modified: ".gmdate('D, d M Y H:i:s', $last_modified)." GMT");
-header("Expires: ".gmdate('D, d M Y H:i:s', (filemtime($this_file) + 691200))." GMT");
+ 		//Add this page too, as well as the groups file
+ 		$modified[] = filemtime(__FILE__);
+ 		$modified[] = filemtime($this->js_groups_file);
 
-echo $js;
+ 		rsort($modified);
+ 		$last_modified = $modified[0];
 
-ob_end_flush();
-//end of js.php
+ 		return $last_modified;
+ 	}
+
+ 	/**
+ 	 * Minifies javascript using google's closure compiler
+ 	 *
+ 	 * @param string $js
+ 	 * @return string
+ 	 */
+ 	protected function minify($js)
+ 	{
+ 		$options = [
+ 			'output_info' => 'errors',
+ 			'output_format' => 'json',
+ 			'compilation_level' => 'SIMPLE_OPTIMIZATIONS',
+ 			//'compilation_level' => 'ADVANCED_OPTIMIZATIONS',
+ 			'js_code' => $js,
+ 			'language' => 'ECMASCRIPT6_STRICT',
+ 			'language_out' => 'ECMASCRIPT5_STRICT'
+ 		];
+
+ 		// Check for errors
+ 		$this->check_minify_errors($options);
+
+ 		// Now actually retrieve the compiled code
+ 		$options['output_info'] = 'compiled_code';
+ 		$res = $this->closure_call($options);
+ 		$json = $res->getBody();
+ 		$obj = json_decode($json);
+
+ 		return $obj->compiledCode;
+ 	}
+
+ 	/**
+ 	 * Output the minified javascript
+ 	 *
+ 	 * @param string $js
+ 	 * @return void
+ 	 */
+ 	protected function output($js)
+ 	{
+ 		$this->send_final_output($js, 'application/javascript', $this->last_modified);
+ 	}
+ }
+
+ // --------------------------------------------------------------------------
+ // ! Start Minifying
+ // --------------------------------------------------------------------------
+
+ $config = require_once('config/config.php');
+ $groups = require_once($config['js_groups_file']);
+ $cache_dir = "{$config['js_root']}cache";
+
+ if ( ! is_dir($cache_dir))
+ {
+ 	mkdir($cache_dir);
+ }
+
+ if ( ! array_key_exists($_GET['g'], $groups))
+ {
+ 	throw new InvalidArgumentException('You must specify a js group that exists');
+ }
+
+ try
+ {
+ 	new JSMin($config, $groups);
+ }
+ catch (FileNotChangedException $e)
+ {
+ 	BaseMin::send304();
+ }
+
+ //end of js.php

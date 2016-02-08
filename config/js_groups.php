@@ -15,15 +15,15 @@
 /**
  * This is the config array for javascript files to concatenate and minify
  */
-return array(	
+return [
 	/*
 		For each group create an array like so
-		
-		'my_group' => array(
+
+		'my_group' => [
 			'path/to/js/file1.js',
 			'path/to/js/file2.js'
-		),
+		],
 	*/
-);
+];
 
 // End of js_groups.php

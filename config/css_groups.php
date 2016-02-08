@@ -15,18 +15,18 @@
 /**
  * This is the config array for css files to concatenate and minify
  */
-return array(
+return [
 	/*-----
-			Css				
+			Css
 					-----*/
-					
+
 	/*
 		For each group create an array like so
-		
-		'my_group' => array(
+
+		'my_group' => [
 			'path/to/css/file1.css',
 			'path/to/css/file2.css'
-		),
+		],
 	*/
-);
+];
 // End of css_groups.php
